@@ -1,6 +1,11 @@
 // 提醒引擎配置。敏感配置（SMTP 服务器/账号/授权码等）从 .env 文件读取，避免明文硬编码到代码中。
 // .env 已加入 .gitignore，不会随代码泄露。字段含义见 reminder-engine/.env.example。
-require('dotenv').config()
+//
+// 关键：用 path 明确指定 .env 的绝对路径（相对于本文件所在目录），
+// 避免因「工作目录(cwd)不同」导致 dotenv 找不到 .env——例如调度器从项目根目录 D:\Dir_of_Sche
+// 运行 node reminder-engine/sweep.js 时，cwd 是根目录而非 reminder-engine/，默认加载会失败。
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '.env') })
 
 // 布尔开关：SMTP 是否启用（EMAIL_ENABLED=true 时启用）
 const emailEnabled = (process.env.EMAIL_ENABLED || 'true') !== 'false'
