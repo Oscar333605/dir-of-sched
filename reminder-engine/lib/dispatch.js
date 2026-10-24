@@ -4,6 +4,7 @@ const { buildMessages } = require('./message')
 const email = require('../channels/email')
 const wechat = require('../channels/wechat')
 const sms = require('../channels/sms')
+const monitor = require('./monitor')
 
 async function dispatchOne(r) {
   const msg = buildMessages(r.type, r)
@@ -16,6 +17,14 @@ async function dispatchOne(r) {
   if (results.length === 0) {
     results.push({ channel: 'all', status: 'skipped', reason: 'no contact info' })
   }
+
+  // 对可自愈的失败渠道触发一次自愈（幂等、无副作用）
+  for (const res of results) {
+    if (res.status === 'fail' && res.errType) {
+      await monitor.selfHeal(res.errType)
+    }
+  }
+
   return { reminder_id: r.reminder_id, channels: results }
 }
 

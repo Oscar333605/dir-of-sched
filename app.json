@@ -4,7 +4,8 @@
     "pages/add/add",
     "pages/detail/detail",
     "pages/history/history",
-    "pages/me/me"
+    "pages/me/me",
+    "pages/monitor/monitor"
   ],
   "window": {
     "navigationBarTitleText": "Dir of Sched",

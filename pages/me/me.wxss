@@ -39,3 +39,20 @@
 .save-btn {
   margin-top: 16rpx;
 }
+
+.entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.entry-text {
+  font-size: 28rpx;
+  color: #3f4552;
+}
+
+.entry-arrow {
+  font-size: 32rpx;
+  color: #b0b6c0;
+}

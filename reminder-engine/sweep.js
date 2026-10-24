@@ -7,6 +7,7 @@
 //
 // 输出：JSON 数组 [{ reminder_id, channels: [{channel,status,reason?}] }]
 const { dispatchOne } = require('./lib/dispatch')
+const monitor = require('./lib/monitor')
 
 async function main() {
   let json = ''
@@ -20,15 +21,19 @@ async function main() {
   try {
     reminders = JSON.parse(json || '[]')
   } catch (e) {
+    monitor.log('error', { kind: 'parse_error', message: e.message })
     console.error('invalid reminders json: ' + e.message)
     process.exit(1)
   }
   const out = []
   for (const r of reminders) out.push(await dispatchOne(r))
   console.log(JSON.stringify(out))
+  // 采集指标 + 评估告警（CLI 单次执行同样纳入监控）
+  await monitor.afterSweep(out)
 }
 
 main().catch(function (e) {
+  monitor.log('error', { kind: 'fatal', message: e && e.message ? e.message : String(e) })
   console.error(e && e.message ? e.message : e)
   process.exit(1)
 })

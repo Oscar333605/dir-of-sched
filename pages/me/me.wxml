@@ -21,4 +21,12 @@
     <input class="input" type="text" value="{{email}}" bindinput="onEmailInput" placeholder="用于接收提醒的邮箱" />
     <view class="btn-primary save-btn" bindtap="saveEmail">{{savingEmail ? '保存中…' : '保存邮箱'}}</view>
   </view>
+
+  <view class="card">
+    <view class="section">系统</view>
+    <view class="entry" bindtap="goMonitor">
+      <view class="entry-text">系统监控</view>
+      <view class="entry-arrow">›</view>
+    </view>
+  </view>
 </view>

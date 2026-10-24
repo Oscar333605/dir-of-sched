@@ -16,6 +16,11 @@ function getTransporter() {
   return _transporter
 }
 
+// 重置 SMTP 连接（供监控自愈调用：连接异常时释放旧连接，下次自动重建）
+function resetTransporter() {
+  _transporter = null
+}
+
 async function sendEmail(to, subject, html) {
   const c = config.email
   if (!c.enabled || !c.host || !to) {
@@ -25,8 +30,11 @@ async function sendEmail(to, subject, html) {
     await getTransporter().sendMail({ from: c.from || c.user, to: to, subject: subject, html: html })
     return { channel: 'email', status: 'ok' }
   } catch (e) {
-    return { channel: 'email', status: 'fail', reason: e.message }
+    // 标注错误类型，便于监控模块决定是否触发「重建连接」自愈
+    const msg = e && e.message ? e.message : ''
+    const isConnFail = /ECONN|ETIMEDOUT|socket|timeout|ECONNRESET|ESOCKET/i.test(msg)
+    return { channel: 'email', status: 'fail', reason: msg, errType: isConnFail ? 'email.smtp_conn_fail' : 'email.send_fail' }
   }
 }
 
-module.exports = { sendEmail }
+module.exports = { sendEmail, resetTransporter }

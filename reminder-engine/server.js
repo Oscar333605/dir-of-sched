@@ -10,6 +10,7 @@
 const http = require('http')
 const { dispatchOne } = require('./lib/dispatch')
 const wechat = require('./channels/wechat')
+const monitor = require('./lib/monitor')
 const config = require('./config')
 
 const PORT = process.env.PORT || 8787
@@ -48,7 +49,10 @@ const semaphore = createSemaphore(MAX_CONCURRENT)
 async function handleSweep(payload) {
   const reminders = Array.isArray(payload) ? payload : (payload && payload.reminders) || []
   const jobs = reminders.map(function (r) { return semaphore.run(function () { return dispatchOne(r) }) })
-  return Promise.all(jobs)
+  const results = await Promise.all(jobs)
+  // 发送完成后采集指标 + 评估告警
+  await monitor.afterSweep(results)
+  return results
 }
 
 // ---- 读取 JSON 请求体（带大小上限，防滥用）----
@@ -85,15 +89,43 @@ function authorized(req) {
 const server = http.createServer(async function (req, res) {
   const url = (req.url || '').split('?')[0]
   const method = req.method || 'GET'
+  monitor.log('info', { kind: 'http', method: method, url: url })
 
-  // 健康检查（无需鉴权，供探活）
+  // 健康检查（无需鉴权，供探活）：附带运行指标快照
   if (method === 'GET' && url === '/health') {
-    return sendJson(res, 200, { status: 'ok', uptime: Math.round(process.uptime()), ts: Date.now() })
+    const snap = monitor.snapshot()
+    return sendJson(res, 200, {
+      status: 'ok',
+      uptime: Math.round(process.uptime()),
+      ts: Date.now(),
+      metrics: {
+        counters: snap.counters,
+        errorCountWindow: snap.errorCountWindow,
+        sweepSuccessRate: snap.sweepSuccessRate
+      }
+    })
   }
 
   // 其余写接口统一鉴权
   if (!authorized(req)) {
+    monitor.log('warn', { kind: 'http', method: method, url: url, unauthorized: true })
     return sendJson(res, 401, { error: 'unauthorized' })
+  }
+
+  // 运行指标（需鉴权）
+  if (method === 'GET' && url === '/metrics') {
+    return sendJson(res, 200, monitor.snapshot())
+  }
+
+  // 自检（需鉴权）：返回当前健康状态与告警评估结果
+  if (method === 'GET' && url === '/selfcheck') {
+    const snap = monitor.snapshot()
+    const alerts = monitor.evaluateAlerts(snap)
+    return sendJson(res, 200, {
+      ok: alerts.length === 0,
+      alerts: alerts,
+      snapshot: snap
+    })
   }
 
   // 发送提醒
@@ -104,6 +136,7 @@ const server = http.createServer(async function (req, res) {
       const out = await handleSweep(payload)
       return sendJson(res, 200, { ok: true, results: out })
     } catch (e) {
+      monitor.log('error', { kind: 'sweep_error', message: e && e.message })
       return sendJson(res, 400, { ok: false, error: e.message })
     }
   }
@@ -116,6 +149,7 @@ const server = http.createServer(async function (req, res) {
       const { openid } = await wechat.jscode2session(payload.code)
       return sendJson(res, 200, { openid: openid })
     } catch (e) {
+      monitor.log('error', { kind: 'openid_error', message: e && e.message })
       return sendJson(res, 400, { error: e.message })
     }
   }
@@ -125,10 +159,14 @@ const server = http.createServer(async function (req, res) {
 
 // ---- 进程守护：捕获未处理异常/拒绝，记录日志但不崩溃退出 ----
 process.on('uncaughtException', function (err) {
-  console.error('[fatal] uncaughtException:', err && err.message ? err.message : err)
+  const msg = err && err.message ? err.message : String(err)
+  console.error('[fatal] uncaughtException:', msg)
+  monitor.log('error', { kind: 'uncaught_exception', message: msg })
 })
 process.on('unhandledRejection', function (reason) {
-  console.error('[fatal] unhandledRejection:', reason && reason.message ? reason.message : reason)
+  const msg = reason && reason.message ? reason.message : String(reason)
+  console.error('[fatal] unhandledRejection:', msg)
+  monitor.log('error', { kind: 'unhandled_rejection', message: msg })
 })
 
 // ---- 优雅关闭：收到 SIGTERM/SIGINT 时停止接收新请求、等待处理完成后退出 ----

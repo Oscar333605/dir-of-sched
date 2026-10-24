@@ -25,6 +25,11 @@ async function getAccessToken() {
   }
 }
 
+// 使 access_token 缓存失效（供监控自愈调用：token 异常时强制重新获取）
+function invalidateToken() {
+  _tokenCache = { token: null, expiresAt: 0 }
+}
+
 // 发送订阅消息。openid 为用户在小程序中的 openid；data 的字段名须与订阅消息模板一致。
 async function sendSubscription(openid, type, data, page) {
   const templateId = (config.wechat.templates || {})[type]
@@ -33,7 +38,7 @@ async function sendSubscription(openid, type, data, page) {
   }
   const token = await getAccessToken()
   if (!token) {
-    return { channel: 'wechat', status: 'fail', reason: 'access_token 获取失败' }
+    return { channel: 'wechat', status: 'fail', reason: 'access_token 获取失败', errType: 'wechat.access_token_fail' }
   }
   const res = await fetch('https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=' + token, {
     method: 'POST',
@@ -48,7 +53,7 @@ async function sendSubscription(openid, type, data, page) {
   })
   const j = await res.json()
   if (j.errcode === 0) return { channel: 'wechat', status: 'ok' }
-  return { channel: 'wechat', status: 'fail', reason: j.errmsg || ('errcode ' + j.errcode) }
+  return { channel: 'wechat', status: 'fail', reason: j.errmsg || ('errcode ' + j.errcode), errType: 'wechat.send_fail' }
 }
 
 // 用 wx.login 的 code 换取 openid（用于小程序收集 openid）。
@@ -66,4 +71,4 @@ async function jscode2session(code) {
   return { openid: j.openid }
 }
 
-module.exports = { getAccessToken, sendSubscription, jscode2session }
+module.exports = { getAccessToken, sendSubscription, jscode2session, invalidateToken }

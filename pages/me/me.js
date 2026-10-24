@@ -33,6 +33,10 @@ Page({
     this.setData({ email: e.detail.value })
   },
 
+  goMonitor() {
+    wx.navigateTo({ url: '/pages/monitor/monitor' })
+  },
+
   async saveEmail() {
     const email = (this.data.email || '').trim()
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

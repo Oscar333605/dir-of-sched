@@ -57,5 +57,12 @@ module.exports = {
       day_2h: '',
       task_ddl: ''
     }
+  },
+
+  // 运行监控与告警（供 lib/monitor.js 使用）。
+  //   webhookUrl  告警推送地址（企业微信/钉钉/飞书群机器人或自建告警服务）。留空则不推送，仅落本地日志。
+  //   告警阈值见 lib/monitor.js 的 ALERT_THRESHOLDS。
+  alerts: {
+    webhookUrl: process.env.ALERT_WEBHOOK_URL || ''
   }
 }

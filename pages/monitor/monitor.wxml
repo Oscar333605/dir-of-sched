@@ -1,0 +1,91 @@
+<view class="page">
+  <view class="header">
+    <view class="title">系统监控</view>
+    <view class="actions">
+      <view class="action-link" bindtap="runSelfCheck">{{running ? '自检中…' : '自检'}}</view>
+      <view class="action-link" bindtap="resetMonitor">重置</view>
+    </view>
+  </view>
+
+  <!-- 引擎健康状态 -->
+  <view class="card">
+    <view class="section">提醒引擎</view>
+    <view wx:if="{{engineStatus === 'ok'}}" class="status-row">
+      <text class="dot dot-ok"></text>
+      <text class="status-text">运行正常</text>
+    </view>
+    <view wx:elif="{{engineStatus === 'down'}}" class="status-row">
+      <text class="dot dot-bad"></text>
+      <text class="status-text">无法连接</text>
+    </view>
+    <view wx:else class="status-row">
+      <text class="dot dot-muted"></text>
+      <text class="status-text">未接入（未配置引擎地址）</text>
+    </view>
+    <view wx:if="{{engineBaseUrl}}" class="muted">地址 {{engineBaseUrl}}</view>
+    <block wx:if="{{engineView}}">
+      <view class="metric-grid">
+        <view class="metric">
+          <view class="metric-num">{{engineView.sweepTotal}}</view>
+          <view class="metric-label">已处理提醒</view>
+        </view>
+        <view class="metric">
+          <view class="metric-num">{{engineView.successRate}}</view>
+          <view class="metric-label">发送成功率</view>
+        </view>
+        <view class="metric">
+          <view class="metric-num">{{engineView.errorCountWindow}}</view>
+          <view class="metric-label">近10分钟错误</view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 客户端运行指标 -->
+  <view class="card" wx:if="{{view}}">
+    <view class="section">客户端</view>
+    <view class="metric-grid">
+      <view class="metric">
+        <view class="metric-num">{{view.apiTotal}}</view>
+        <view class="metric-label">接口请求</view>
+      </view>
+      <view class="metric">
+        <view class="metric-num">{{view.failRate}}</view>
+        <view class="metric-label">接口失败率</view>
+      </view>
+      <view class="metric">
+        <view class="metric-num">{{view.errTotal}}</view>
+        <view class="metric-label">异常错误</view>
+      </view>
+    </view>
+    <view class="env-row muted" wx:if="{{view.envVersion}}">
+      版本 {{view.envVersion}} · SDK {{view.sdkVersion}}
+    </view>
+  </view>
+
+  <!-- 最近错误 -->
+  <view class="card" wx:if="{{view}}">
+    <view class="section">最近错误 · {{view.errors.length}}</view>
+    <view wx:if="{{view.errors.length === 0}}" class="empty-desc">暂无错误记录</view>
+    <view wx:for="{{view.errors}}" wx:key="ts" class="err-item">
+      <view class="err-head">
+        <text class="tag {{item.kind === 'api_error' ? 'tag-warn' : 'tag-danger'}}">{{item.kind}}</text>
+        <text class="err-time">{{item.timeLabel}}</text>
+      </view>
+      <view class="err-msg">{{item.message}}</view>
+      <view wx:if="{{item.url}}" class="err-url muted">{{item.statusCode}} · {{item.url}}</view>
+    </view>
+  </view>
+
+  <!-- 最近请求 -->
+  <view class="card" wx:if="{{view}}">
+    <view class="section">最近请求 · {{view.events.length}}</view>
+    <view wx:if="{{view.events.length === 0}}" class="empty-desc">暂无请求记录</view>
+    <view wx:for="{{view.events}}" wx:key="ts" class="req-row">
+      <text class="req-status {{item.bad ? 'req-bad' : 'req-ok'}}">{{item.statusCode}}</text>
+      <text class="req-method">{{item.method}}</text>
+      <text class="req-url ellipsis">{{item.url}}</text>
+      <text class="req-dur muted">{{item.durationMs}}ms</text>
+    </view>
+  </view>
+</view>
