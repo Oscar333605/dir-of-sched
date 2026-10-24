@@ -435,6 +435,10 @@ EMAIL_FROM=日程助手 <you@example.com>
 
 6. **监控为「进程内 + 本地」**：引擎监控指标存内存（重启清零，靠日志文件留痕）；前端监控数据存本地 Storage（换设备/清缓存即丢失）。若要跨设备、跨重启的持久化监控，需将指标上报到云数据库或外部监控服务（当前未接入）。
 
+7. **多 openid 导致邮箱配置错位（已修复，需持续留意）**：同一用户在不同环境（开发者工具 / 真机 / 不同 AppID）登录会产生**不同的 openid**，而 `user_settings` 的邮箱是按 `owner_id`（即 openid）隔离的。若用户在 A 环境创建任务、却在 B 环境配置邮箱，会导致任务查不到邮箱而**静默漏发邮件**（表现为 `email=null`、sweep 走 `no contact info`）。历史上出现过三个 openid（`openid_example_1` 等），其中周期任务所属 openid 一度无邮箱配置。**已为该 openid 补上邮箱**，但建议：统一在小程序内（当前登录态）配置邮箱，避免跨环境错位；若发现漏发，优先查 `user_settings` 是否有对应 owner 的邮箱。
+
+8. **dotenv 路径依赖 cwd（已修复）**：`config.js` 原本 `require('dotenv').config()` 未指定路径，dotenv 默认从**当前工作目录**找 `.env`。而调度器自动化从项目根目录 `D:\Dir_of_Sche` 运行 `node reminder-engine/sweep.js`，cwd 是根目录而非 `reminder-engine/`，导致 `.env` 加载失败（`EMAIL_PASS` 为空 → `Missing credentials for "PLAIN"`）。**已修复**：`config.js` 改用 `path.join(__dirname, '.env')` 显式指定绝对路径。
+
 ---
 
 ## 潜在风险
