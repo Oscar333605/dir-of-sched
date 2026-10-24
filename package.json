@@ -1,0 +1,8 @@
+{
+  "name": "schedule-assistant",
+  "version": "1.0.0",
+  "description": "日程管理助手微信小程序",
+  "dependencies": {
+    "@tencent-ai/workbuddy-cloud-sdk": "dev"
+  }
+}

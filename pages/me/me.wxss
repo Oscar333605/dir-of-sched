@@ -1,0 +1,39 @@
+.section {
+  font-size: 30rpx;
+  font-weight: 500;
+  margin-bottom: 16rpx;
+}
+
+.line {
+  font-size: 28rpx;
+  color: #3f4552;
+}
+
+.hint {
+  color: #8a919f;
+  font-size: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.input {
+  background: #f6f7f9;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  font-size: 28rpx;
+  margin-bottom: 16rpx;
+}
+
+.login-btn,
+.save-btn {
+  margin-top: 16rpx;
+}
+
+.rule {
+  font-size: 26rpx;
+  color: #3f4552;
+  margin-bottom: 12rpx;
+}
+
+.rule-tip {
+  margin-top: 8rpx;
+}

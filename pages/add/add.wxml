@@ -1,0 +1,146 @@
+<view class="page">
+  <view class="card">
+    <view class="hint">
+      <block wx:if="{{type === 'activity'}}">把活动安排粘贴到下面（支持公众号文章链接），或上传截图，点「智能解析」自动提取时间、地点、报名、备注等信息。</block>
+      <block wx:else>粘贴任务描述（支持公众号链接），点「智能解析」自动提取工作内容和截止时间。</block>
+    </view>
+    <textarea class="textarea" placeholder="{{type === 'activity' ? '粘贴活动安排文字/公众号链接' : '粘贴任务描述'}}" value="{{rawText}}" bindinput="onInput" maxlength="-1" />
+    <view class="row">
+      <view class="btn-ghost half" bindtap="onPaste">从剪贴板粘贴</view>
+      <view wx:if="{{type === 'activity'}}" class="btn-ghost half" bindtap="onChooseImage">上传截图</view>
+    </view>
+    <image wx:if="{{imageTempPath}}" class="preview" src="{{imageTempPath}}" mode="widthFix" />
+    <view class="row action-row">
+      <view class="btn-primary half" bindtap="onParse">{{parsing ? '解析中…' : '智能解析'}}</view>
+      <view class="btn-ghost half" bindtap="onManual">手动填写</view>
+    </view>
+  </view>
+
+  <!-- 活动表单 -->
+  <block wx:if="{{type === 'activity' && parsed}}">
+    <view class="card">
+      <view class="field">
+        <view class="label">活动名称</view>
+        <input class="input" value="{{form.name}}" data-field="name" bindinput="onField" placeholder="活动名称" />
+      </view>
+
+      <view class="field">
+        <view class="label">活动地点</view>
+        <input class="input" value="{{form.location}}" data-field="location" bindinput="onField" placeholder="地点（可选）" />
+      </view>
+
+      <view class="field">
+        <view class="label">备注（着装要求 / 特殊说明）</view>
+        <textarea class="textarea small" value="{{form.note}}" data-field="note" bindinput="onField" placeholder="如：请着正装出席，携带身份证" maxlength="-1" />
+      </view>
+
+      <view class="field">
+        <view class="label">开始时间</view>
+        <view class="row">
+          <picker class="picker" mode="date" value="{{form.startDate}}" data-field="startDate" bindchange="onField">
+            <view class="picker-val">{{form.startDate}}</view>
+          </picker>
+          <picker class="picker" mode="time" value="{{form.startTime}}" data-field="startTime" bindchange="onField">
+            <view class="picker-val">{{form.startTime}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="field">
+        <view class="label">结束时间（可选）</view>
+        <view class="row">
+          <picker class="picker" mode="date" value="{{form.endDate || today}}" data-field="endDate" bindchange="onField">
+            <view class="picker-val">{{form.endDate || '选择日期'}}</view>
+          </picker>
+          <picker class="picker" mode="time" value="{{form.endTime}}" data-field="endTime" bindchange="onField">
+            <view class="picker-val">{{form.endTime}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="field switch-field">
+        <view class="label">是否包含报名环节</view>
+        <switch checked="{{form.hasRegistration}}" bindchange="onHasRegistration" color="#3b82f6" />
+      </view>
+
+      <block wx:if="{{form.hasRegistration}}">
+        <view class="field">
+          <view class="label">报名开始时间</view>
+          <view class="row">
+            <picker class="picker" mode="date" value="{{form.regStartDate || today}}" data-field="regStartDate" bindchange="onField">
+              <view class="picker-val">{{form.regStartDate || '选择日期'}}</view>
+            </picker>
+            <picker class="picker" mode="time" value="{{form.regStartTime}}" data-field="regStartTime" bindchange="onField">
+              <view class="picker-val">{{form.regStartTime}}</view>
+            </picker>
+          </view>
+        </view>
+
+        <view class="field">
+          <view class="label">报名截止时间</view>
+          <view class="row">
+            <picker class="picker" mode="date" value="{{form.ddlDate || today}}" data-field="ddlDate" bindchange="onField">
+              <view class="picker-val">{{form.ddlDate || '选择日期'}}</view>
+            </picker>
+            <picker class="picker" mode="time" value="{{form.ddlTime}}" data-field="ddlTime" bindchange="onField">
+              <view class="picker-val">{{form.ddlTime}}</view>
+            </picker>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '保存中…' : '保存并排入日程'}}</view>
+  </block>
+
+  <!-- 任务表单 -->
+  <block wx:if="{{type === 'task' && parsed}}">
+    <view class="card">
+      <view class="field">
+        <view class="label">任务名称</view>
+        <input class="input" value="{{form.name}}" data-field="name" bindinput="onField" placeholder="任务名称" />
+      </view>
+
+      <view class="field">
+        <view class="label">工作内容</view>
+        <textarea class="textarea small" value="{{form.taskContent}}" data-field="taskContent" bindinput="onField" placeholder="描述需要完成的工作内容" maxlength="-1" />
+      </view>
+
+      <view class="field">
+        <view class="label">备注（可选）</view>
+        <textarea class="textarea small" value="{{form.note}}" data-field="note" bindinput="onField" placeholder="其他说明" maxlength="-1" />
+      </view>
+
+      <view class="field">
+        <view class="label">截止时间（可选）</view>
+        <view class="row">
+          <picker class="picker" mode="date" value="{{form.taskDdlDate || today}}" data-field="taskDdlDate" bindchange="onField">
+            <view class="picker-val">{{form.taskDdlDate || '选择日期'}}</view>
+          </picker>
+          <picker class="picker" mode="time" value="{{form.taskDdlTime}}" data-field="taskDdlTime" bindchange="onField">
+            <view class="picker-val">{{form.taskDdlTime}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="field switch-field">
+        <view class="label">每天重复</view>
+        <switch checked="{{form.isRecurring}}" bindchange="onIsRecurring" color="#3b82f6" />
+      </view>
+
+      <view class="field">
+        <view class="label">提醒时间（可选，每日定时提醒）</view>
+        <view class="row">
+          <picker class="picker" mode="date" value="{{form.reminderDate || today}}" data-field="reminderDate" bindchange="onField">
+            <view class="picker-val">{{form.reminderDate || '选择日期'}}</view>
+          </picker>
+          <picker class="picker" mode="time" value="{{form.reminderTime}}" data-field="reminderTime" bindchange="onField">
+            <view class="picker-val">{{form.reminderTime}}</view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '保存中…' : '保存任务'}}</view>
+  </block>
+</view>

@@ -1,0 +1,21 @@
+{
+  "miniprogramRoot": "./",
+  "compileType": "miniprogram",
+  "appid": "wx39711f6c3bd2ca20",
+  "projectname": "schedule-assistant",
+  "setting": {
+    "es6": true,
+    "minified": true,
+    "urlCheck": true,
+    "postcss": true
+  },
+  "packOptions": {
+    "ignore": [
+      { "type": "folder", "value": "reminder-engine" },
+      { "type": "folder", "value": "node_modules" },
+      { "type": "folder", "value": ".workbuddy" },
+      { "type": "file", "value": ".wbapp_lehL7wVwcebPnun1xnLup6.genie" },
+      { "type": "file", "value": ".wbapp_lehL7wVwcebPnun1xnLup6.privacy.json" }
+    ]
+  }
+}

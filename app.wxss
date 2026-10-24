@@ -1,0 +1,75 @@
+page {
+  background-color: #f6f7f9;
+  color: #1f2329;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+.page {
+  padding: 24rpx;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: #ffffff;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  padding: 20rpx 0;
+  text-align: center;
+}
+
+.btn-primary[disabled] {
+  background: #b9cdf0;
+}
+
+.btn-ghost {
+  background: #f0f3f8;
+  color: #3b82f6;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  padding: 20rpx 0;
+  text-align: center;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: #eef4ff;
+  color: #3b82f6;
+}
+
+.tag-warn {
+  background: #fff3e6;
+  color: #d97706;
+}
+
+.tag-danger {
+  background: #fdecea;
+  color: #d93025;
+}
+
+.tag-done {
+  background: #e8f8ee;
+  color: #16a34a;
+}
+
+.muted {
+  color: #8a919f;
+  font-size: 24rpx;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

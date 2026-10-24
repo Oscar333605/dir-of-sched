@@ -1,0 +1,52 @@
+<view class="page" wx:if="{{!loading}}">
+  <view class="card">
+    <view class="name">{{event.name}}</view>
+    <!-- 任务类型 -->
+    <block wx:if="{{event.eventType === 'task'}}">
+      <view wx:if="{{event.taskContent}}" class="line">工作内容：{{event.taskContent}}</view>
+      <view wx:if="{{event.taskDdlLabel}}" class="line">截止：{{event.taskDdlLabel}}</view>
+      <view wx:if="{{event.recurring}}" class="line"><text class="tag">每天重复</text></view>
+      <view wx:if="{{event.reminderLabel}}" class="line">提醒时间：{{event.reminderLabel}}</view>
+      <view wx:if="{{event.note}}" class="line">备注：{{event.note}}</view>
+    </block>
+    <!-- 活动类型 -->
+    <block wx:else>
+      <view class="line">开始：{{event.startLabel}}</view>
+      <view wx:if="{{event.endLabel}}" class="line">结束：{{event.endLabel}}</view>
+      <view wx:if="{{event.location}}" class="line">地点：{{event.location}}</view>
+      <view wx:if="{{event.note}}" class="line">备注：{{event.note}}</view>
+    </block>
+    <view wx:if="{{completed}}" class="line"><text class="tag tag-done">已完成</text></view>
+  </view>
+
+  <view class="card">
+    <view class="btn-primary" wx:if="{{!completed}}" bindtap="markCompleted">标记为已完成</view>
+    <view class="btn-ghost" wx:else bindtap="unmarkCompleted">撤销完成</view>
+  </view>
+
+  <view wx:if="{{event.eventType !== 'task' && event.hasRegistration}}" class="card reg">
+    <view class="reg-title">报名</view>
+    <view wx:if="{{regStartLabel}}" class="line">开始时间：{{regStartLabel}}</view>
+    <view class="line">截止时间：{{ddlLabel || '未设置'}}</view>
+    <view wx:if="{{ddlPassed}}" class="tag tag-danger">报名已截止</view>
+    <view wx:else class="line muted">{{regConfirmed ? '状态：已完成报名' : '状态：尚未确认报名'}}</view>
+    <view wx:if="{{!ddlPassed}}" class="btn-primary reg-btn" bindtap="{{regConfirmed ? 'cancelRegistration' : 'confirmRegistration'}}">
+      {{regConfirmed ? '撤销报名确认' : '我已完成报名'}}
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section">提醒计划</view>
+    <view wx:if="{{reminders.length === 0}}" class="muted">暂无待发提醒</view>
+    <view wx:for="{{reminders}}" wx:key="id" class="reminder">
+      <view class="reminder-name">{{item.typeLabel}}</view>
+      <view class="muted">{{item.triggerLabel}}（{{item.relLabel}}）</view>
+      <view class="reminder-status">
+        <text wx:if="{{item.sent}}" class="tag">已发送</text>
+        <text wx:else class="tag tag-warn">待发送</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="btn-ghost danger-btn" bindtap="deleteEvent">删除此活动</view>
+</view>

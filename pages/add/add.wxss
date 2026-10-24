@@ -1,0 +1,89 @@
+.hint {
+  color: #8a919f;
+  font-size: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 200rpx;
+  box-sizing: border-box;
+  background: #f6f7f9;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+}
+
+.textarea.small {
+  min-height: 120rpx;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.half {
+  flex: 1;
+  text-align: center;
+}
+
+.preview {
+  width: 100%;
+  border-radius: 12rpx;
+  margin-top: 16rpx;
+}
+
+.parse-btn {
+  margin-top: 24rpx;
+}
+
+.action-row {
+  margin-top: 24rpx;
+}
+
+.action-row .btn-primary,
+.action-row .btn-ghost {
+  margin-top: 0;
+}
+
+.field {
+  margin-bottom: 24rpx;
+}
+
+.label {
+  font-size: 26rpx;
+  color: #3f4552;
+  margin-bottom: 12rpx;
+}
+
+.input {
+  background: #f6f7f9;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  font-size: 28rpx;
+}
+
+.picker {
+  flex: 1;
+  background: #f6f7f9;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+}
+
+.picker-val {
+  font-size: 28rpx;
+}
+
+.switch-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.save-btn {
+  margin-top: 8rpx;
+  margin-bottom: 40rpx;
+}

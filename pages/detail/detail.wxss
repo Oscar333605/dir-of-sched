@@ -1,0 +1,52 @@
+.name {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.line {
+  font-size: 28rpx;
+  color: #3f4552;
+  margin-bottom: 8rpx;
+}
+
+.section {
+  font-size: 28rpx;
+  font-weight: 500;
+  margin-bottom: 16rpx;
+}
+
+.reg-title {
+  font-size: 30rpx;
+  font-weight: 500;
+  margin-bottom: 12rpx;
+}
+
+.reg-btn {
+  margin-top: 20rpx;
+}
+
+.reminder {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f1f4;
+}
+
+.reminder:last-child {
+  border-bottom: none;
+}
+
+.reminder-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  margin-bottom: 4rpx;
+}
+
+.reminder-status {
+  margin-top: 8rpx;
+}
+
+.danger-btn {
+  margin-top: 8rpx;
+  color: #d93025;
+  background: #ffffff;
+}

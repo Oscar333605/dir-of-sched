@@ -1,0 +1,14 @@
+{
+  "name": "schedule-reminder-engine",
+  "version": "1.0.0",
+  "description": "日程管理助手 · 提醒引擎（邮件 / 微信订阅消息 / 短信）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "sweep": "node sweep.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "nodemailer": "^6.9.13"
+  }
+}
