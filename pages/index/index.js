@@ -225,6 +225,10 @@ Page({
     this.loadEvents()
   },
 
+  goHistory() {
+    wx.navigateTo({ url: '/pages/history/history' })
+  },
+
   goMe() {
     wx.navigateTo({ url: '/pages/me/me' })
   }

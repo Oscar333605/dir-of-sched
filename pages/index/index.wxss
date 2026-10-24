@@ -34,7 +34,13 @@
   font-weight: 600;
 }
 
-.settings {
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.nav-link {
   color: #3b82f6;
   font-size: 26rpx;
 }

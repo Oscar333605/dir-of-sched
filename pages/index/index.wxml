@@ -1,7 +1,10 @@
 <view class="page">
   <view class="header">
     <view class="title">我的日程</view>
-    <view class="settings" bindtap="goMe">设置</view>
+    <view class="nav-links">
+      <view class="nav-link" bindtap="goHistory">历史</view>
+      <view class="nav-link" bindtap="goMe">设置</view>
+    </view>
   </view>
 
   <block wx:if="{{!loggedIn && !loading}}">
