@@ -17,13 +17,14 @@
       <view wx:if="{{event.location}}" class="line">地点：{{event.location}}</view>
       <view wx:if="{{event.note}}" class="line">备注：{{event.note}}</view>
     </block>
-    <view wx:if="{{completed}}" class="line"><text class="tag tag-done">已完成</text></view>
+    <view wx:if="{{completed}}" class="line"><text class="tag tag-done">{{terminated ? '已终结' : '已完成'}}</text></view>
   </view>
 
   <view class="card">
     <view class="btn-ghost" bindtap="goEdit">编辑</view>
     <view class="btn-primary" wx:if="{{!completed}}" bindtap="markCompleted" style="margin-top:16rpx;">标记为已完成</view>
     <view class="btn-ghost" wx:else bindtap="unmarkCompleted" style="margin-top:16rpx;">撤销完成</view>
+    <view wx:if="{{event.eventType === 'task' && event.recurring && !completed}}" class="btn-ghost danger-btn" bindtap="terminateRecurring" style="margin-top:16rpx;">终结任务</view>
   </view>
 
   <view wx:if="{{event.eventType !== 'task' && event.hasRegistration}}" class="card reg">

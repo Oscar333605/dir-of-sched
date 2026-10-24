@@ -12,8 +12,9 @@ Page({
     ddlLabel: '',
     ddlPassed: false,
     regStartLabel: '',
-    regConfirmed: false,
-    completed: false
+        regConfirmed: false,
+    completed: false,
+    terminated: false
   },
 
   onLoad(options) {
@@ -84,7 +85,8 @@ Page({
       ddlLabel: ddlLabel,
       ddlPassed: ddlPassed,
       regConfirmed: event.registration_confirmed === true,
-      completed: event.status === 'completed'
+      completed: event.status === 'completed',
+      terminated: event.terminated === true
     })
   },
 
@@ -94,20 +96,63 @@ Page({
     wx.navigateTo({ url: '/pages/add/add?type=' + type + '&id=' + this.data.id })
   },
 
+  // 判断当前是否为周期任务（每天重复）
+  isRecurring() {
+    const e = this.data.event
+    return !!(e && (e.recurring === true))
+  },
+
+  // 停止某事件的后续提醒：删除其所有未发送（pending）的提醒，使其不再触发、也不再被调度器续期。
+  async stopPendingReminders() {
+    await cloud.database.from('reminders').delete().eq('event_id', this.data.id)
+  },
+
   // 手动标记完成（历史回溯用）
-  markCompleted() {
+  async markCompleted() {
     if (this.data.completed) return
     const that = this
-    cloud.database.from('events')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', this.data.id)
-      .then(function () {
-        that.setData({ completed: true })
-        wx.showToast({ title: '已标记完成', icon: 'success' })
-      })
-      .catch(function () {
-        wx.showToast({ title: '操作失败', icon: 'none' })
-      })
+    try {
+      // 周期任务完成时，同时停止后续每日提醒
+      if (this.isRecurring()) {
+        await this.stopPendingReminders()
+      }
+      await cloud.database.from('events')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', this.data.id)
+      that.setData({ completed: true })
+      wx.showToast({ title: '已标记完成', icon: 'success' })
+    } catch (e) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+  // 终结周期任务：停止后续每日提醒，并将任务归入历史（备查）。
+  // 与「标记完成」的区别在于语义：终结表示该重复任务按设定时长（一周/一月等）到期结束。
+  terminateRecurring() {
+    const that = this
+    wx.showModal({
+      title: '终结任务',
+      content: '终结后该任务将停止后续每天提醒，并归入历史日程备查。确定终结吗？',
+      confirmText: '终结',
+      confirmColor: '#ef4444',
+      success(res) {
+        if (!res.confirm) return
+        that.doTerminate()
+      }
+    })
+  },
+
+  async doTerminate() {
+    try {
+      await this.stopPendingReminders()
+      await cloud.database.from('events')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), terminated: true })
+        .eq('id', this.data.id)
+      this.setData({ completed: true, terminated: true })
+      wx.showToast({ title: '已终结，归入历史', icon: 'success' })
+    } catch (e) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
   },
 
   // 撤销完成，恢复为进行中/待办
@@ -119,10 +164,25 @@ Page({
       success(res) {
         if (!res.confirm) return
         cloud.database.from('events')
-          .update({ status: 'active', completed_at: null })
+          .update({ status: 'active', completed_at: null, terminated: false })
           .eq('id', that.data.id)
-          .then(function () {
-            that.setData({ completed: false })
+          .then(async function () {
+            // 周期任务恢复后，重建后续每日提醒
+            if (that.isRecurring()) {
+              const { computeReminders } = require('../../utils/reminder')
+              const { data: ev } = await cloud.database.from('events').select('*').eq('id', that.data.id).single()
+              if (ev) {
+                await cloud.database.from('reminders').delete().eq('event_id', that.data.id)
+                const reminders = computeReminders(ev)
+                if (reminders.length > 0) {
+                  const rows = reminders.map(function (r) {
+                    return { event_id: that.data.id, type: r.type, trigger_at: r.triggerAt }
+                  })
+                  await cloud.database.from('reminders').insert(rows)
+                }
+              }
+            }
+            that.setData({ completed: false, terminated: false })
             wx.showToast({ title: '已恢复', icon: 'success' })
           })
           .catch(function () {

@@ -58,25 +58,6 @@
           </view>
         </view>
       </block>
-
-      <block wx:if="{{past.length > 0}}">
-        <view class="section">历史日程 · {{past.length}}</view>
-        <view wx:for="{{past}}" wx:key="id" class="card event dim" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-          <view class="event-head">
-            <view class="event-name">{{item.name}}</view>
-            <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
-          </view>
-          <view class="event-row muted">{{item.startLabel}}</view>
-          <view class="event-row">
-            <text wx:if="{{item.completed}}" class="tag tag-done">已完成</text>
-            <text wx:elif="{{item.ended}}" class="tag">已结束</text>
-          </view>
-          <view class="event-ops">
-            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="activity">编辑</text>
-            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
-          </view>
-        </view>
-      </block>
     </block>
 
     <!-- 任务视图 -->
@@ -102,25 +83,6 @@
           <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
         </view>
       </view>
-
-      <block wx:if="{{taskDone.length > 0}}">
-        <view class="section">已完成 · {{taskDone.length}}</view>
-        <view wx:for="{{taskDone}}" wx:key="id" class="card event dim" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-          <view class="event-head">
-            <view class="event-name">{{item.name}}</view>
-            <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
-          </view>
-          <view wx:if="{{item.ddlLabel}}" class="event-row muted">截止 {{item.ddlLabel}}</view>
-          <view class="event-row">
-            <text wx:if="{{item.recurring}}" class="tag">每天</text>
-            <text class="tag tag-done">已完成</text>
-          </view>
-          <view class="event-ops">
-            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="task">编辑</text>
-            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
-          </view>
-        </view>
-      </block>
     </block>
 
     <!-- 周期任务视图 -->

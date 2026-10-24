@@ -1,4 +1,53 @@
 <view class="page">
+  <view class="header">
+    <view class="title">我的</view>
+  </view>
+
+  <!-- 历史日程板块 -->
+  <block wx:if="{{loggedIn}}">
+    <view class="section">历史日程</view>
+
+    <!-- 活动历史 -->
+    <view class="section sub">活动 · {{histActivity.length}}</view>
+    <view wx:if="{{histActivity.length === 0}}" class="card empty">
+      <view class="empty-desc">暂无历史活动</view>
+    </view>
+    <view wx:for="{{histActivity}}" wx:key="id" class="card event dim" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="event-name">{{item.name}}</view>
+      <view class="event-row muted">{{item.startLabel}}{{item.endLabel ? ' — ' + item.endLabel : ''}}</view>
+      <view wx:if="{{item.location}}" class="event-row muted">地点 {{item.location}}</view>
+      <view wx:if="{{item.completed}}" class="event-row"><text class="tag tag-done">已完成</text></view>
+    </view>
+
+    <!-- 任务历史 -->
+    <view class="section sub">任务 · {{histTask.length}}</view>
+    <view wx:if="{{histTask.length === 0}}" class="card empty">
+      <view class="empty-desc">暂无历史任务</view>
+    </view>
+    <view wx:for="{{histTask}}" wx:key="id" class="card event dim" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="event-name">{{item.name}}</view>
+      <view wx:if="{{item.content}}" class="event-row muted">{{item.content}}</view>
+      <view wx:if="{{item.ddlLabel}}" class="event-row muted">截止 {{item.ddlLabel}}</view>
+      <view class="event-row"><text class="tag tag-done">已完成</text></view>
+    </view>
+
+    <!-- 周期任务历史 -->
+    <view class="section sub">周期任务 · {{histRecurring.length}}</view>
+    <view wx:if="{{histRecurring.length === 0}}" class="card empty">
+      <view class="empty-desc">暂无历史周期任务</view>
+    </view>
+    <view wx:for="{{histRecurring}}" wx:key="id" class="card event dim" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="event-name">{{item.name}}</view>
+      <view wx:if="{{item.content}}" class="event-row muted">{{item.content}}</view>
+      <view wx:if="{{item.reminderTimeLabel}}" class="event-row muted">每天 {{item.reminderTimeLabel}} 提醒</view>
+      <view class="event-row">
+        <text wx:if="{{item.terminated}}" class="tag tag-danger">已终结</text>
+        <text wx:else class="tag tag-done">已完成</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 账号 -->
   <view class="card">
     <view class="section">账号</view>
     <block wx:if="{{loggedIn}}">
@@ -12,17 +61,8 @@
 
   <view wx:if="{{loggedIn}}" class="card">
     <view class="section">邮件提醒</view>
-    <view class="hint">填写邮箱后，每次提醒都会同步发送邮件到该地址（报名开始前5分钟、报名截止前、活动前三天07:00、前一天23:00、当天提前2小时、任务截止前）。</view>
+    <view class="hint">填写邮箱后，每次提醒都会同步发送邮件到该地址。</view>
     <input class="input" type="text" value="{{email}}" bindinput="onEmailInput" placeholder="用于接收提醒的邮箱" />
     <view class="btn-primary save-btn" bindtap="saveEmail">{{savingEmail ? '保存中…' : '保存邮箱'}}</view>
-  </view>
-
-  <view class="card">
-    <view class="section">提醒机制说明</view>
-    <view class="rule">1. 含报名环节：报名开始前 5 分钟提醒报名开始，报名成功后回小程序确认；报名截止前提醒完成报名</view>
-    <view class="rule">2. 活动前三天 07:00、前一天 23:00 各提醒一次</view>
-    <view class="rule">3. 活动当天距开始 2 小时再提醒一次</view>
-    <view class="rule">4. 任务在截止前提醒完成</view>
-    <view class="muted rule-tip">每次提醒同时通过微信消息与邮件发送；短信渠道可在配置后启用。</view>
   </view>
 </view>

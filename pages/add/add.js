@@ -355,10 +355,19 @@ Page({
       const taskDdlIso = f.taskDdlDate ? buildIso(f.taskDdlDate, f.taskDdlTime) : null
       // 提醒频率：none=不提醒 / once=提醒一次 / daily=每天提醒
       const remindMode = f.remindMode || 'none'
-      // 提醒时间：仅当 remindMode 为 once/daily 且选了日期时才写入
-      const reminderIso = (remindMode !== 'none' && f.reminderDate) ? buildIso(f.reminderDate, f.reminderTime) : null
       const isRecurring = remindMode === 'daily'
       const recurrenceRule = remindMode === 'none' ? null : remindMode
+
+      // 提醒时间：
+      // - once（提醒一次）：需要完整日期+时分，未选日期则不写入
+      // - daily（每天提醒）：只需「时分」，日期用当天兜底（后端只取时分滚动顺延，日期部分无意义）
+      let reminderIso = null
+      if (remindMode === 'once') {
+        reminderIso = f.reminderDate ? buildIso(f.reminderDate, f.reminderTime) : null
+      } else if (remindMode === 'daily') {
+        // 用当天日期 + 用户选择的时分，保证 reminder_time 一定有值，后端据此取时分
+        reminderIso = buildIso(this.data.today, f.reminderTime)
+      }
 
       // start_time 表约束 NOT NULL：任务无独立开始时间，
       // 有截止时间用截止时间，否则用提醒时间/当前时间兜底，仅满足约束、不影响展示（任务展示用 task_ddl）

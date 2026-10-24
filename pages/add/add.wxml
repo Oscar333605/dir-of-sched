@@ -136,14 +136,14 @@
         <view class="field">
           <view class="label">{{form.remindMode === 'daily' ? '每天提醒时间' : '提醒时间'}}</view>
           <view class="row">
-            <picker class="picker" mode="date" value="{{form.reminderDate || today}}" data-field="reminderDate" bindchange="onField">
+            <picker wx:if="{{form.remindMode === 'once'}}" class="picker" mode="date" value="{{form.reminderDate || today}}" data-field="reminderDate" bindchange="onField">
               <view class="picker-val">{{form.reminderDate || '选择日期'}}</view>
             </picker>
             <picker class="picker" mode="time" value="{{form.reminderTime}}" data-field="reminderTime" bindchange="onField">
               <view class="picker-val">{{form.reminderTime}}</view>
             </picker>
           </view>
-          <view wx:if="{{form.remindMode === 'daily'}}" class="hint">每天重复时，以所选时间为准，日期部分会自动顺延到每天。</view>
+          <view wx:if="{{form.remindMode === 'daily'}}" class="hint">每天都会在这个时间提醒，日期会自动顺延。</view>
         </view>
       </block>
     </view>
