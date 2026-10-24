@@ -20,38 +20,59 @@
 
     <!-- 活动视图 -->
     <block wx:if="{{tab === 'activity'}}">
-      <view class="section">即将开始 · {{upcoming.length}}<text class="hint-tip">（长按日程可删除）</text></view>
+      <view class="section">即将开始 · {{upcoming.length}}<text class="hint-tip">（点卡片看详情，长按删除）</text></view>
       <view wx:if="{{upcoming.length === 0}}" class="card empty">
         <view class="empty-desc">暂无待办活动，点右下角「+」添加</view>
       </view>
       <view wx:for="{{upcoming}}" wx:key="id" class="card event" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-        <view class="event-name">{{item.name}}</view>
+        <view class="event-head">
+          <view class="event-name">{{item.name}}</view>
+          <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+        </view>
         <view class="event-row">开始 {{item.startLabel}} · {{item.relLabel}}</view>
         <view wx:if="{{item.location}}" class="event-row muted">地点 {{item.location}}</view>
         <view class="tags">
           <text wx:if="{{item.hasReg}}" class="tag tag-warn">需报名</text>
           <text wx:if="{{item.hasDdl}}" class="tag tag-danger">有报名截止</text>
         </view>
+        <view class="event-ops">
+          <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="activity">编辑</text>
+          <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
+        </view>
       </view>
 
       <block wx:if="{{ongoing.length > 0}}">
         <view class="section">进行中 · {{ongoing.length}}</view>
         <view wx:for="{{ongoing}}" wx:key="id" class="card event" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-          <view class="event-name">{{item.name}}</view>
+          <view class="event-head">
+            <view class="event-name">{{item.name}}</view>
+            <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+          </view>
           <view wx:if="{{item.endLabel}}" class="event-row">开始 {{item.startLabel}} · 结束 {{item.endLabel}}</view>
           <view wx:else class="event-row">开始 {{item.startLabel}}</view>
           <view wx:if="{{item.location}}" class="event-row muted">地点 {{item.location}}</view>
+          <view class="event-ops">
+            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="activity">编辑</text>
+            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
+          </view>
         </view>
       </block>
 
       <block wx:if="{{past.length > 0}}">
         <view class="section">历史日程 · {{past.length}}</view>
         <view wx:for="{{past}}" wx:key="id" class="card event dim" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-          <view class="event-name">{{item.name}}</view>
+          <view class="event-head">
+            <view class="event-name">{{item.name}}</view>
+            <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+          </view>
           <view class="event-row muted">{{item.startLabel}}</view>
           <view class="event-row">
             <text wx:if="{{item.completed}}" class="tag tag-done">已完成</text>
             <text wx:elif="{{item.ended}}" class="tag">已结束</text>
+          </view>
+          <view class="event-ops">
+            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="activity">编辑</text>
+            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
           </view>
         </view>
       </block>
@@ -59,29 +80,60 @@
 
     <!-- 任务视图 -->
     <block wx:if="{{tab === 'task'}}">
-      <view class="section">待办任务 · {{taskPending.length}}<text class="hint-tip">（长按可删除）</text></view>
+      <view class="section">短期任务 · {{taskPending.length}}<text class="hint-tip">（点卡片看详情，长按删除）</text></view>
       <view wx:if="{{taskPending.length === 0}}" class="card empty">
-        <view class="empty-desc">暂无待办任务，点右下角「+」添加</view>
+        <view class="empty-desc">暂无短期任务，点右下角「+」添加</view>
       </view>
       <view wx:for="{{taskPending}}" wx:key="id" class="card event" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-        <view class="event-name">{{item.name}}</view>
+        <view class="event-head">
+          <view class="event-name">{{item.name}}</view>
+          <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+        </view>
         <view wx:if="{{item.content}}" class="event-row muted">{{item.content}}</view>
         <view wx:if="{{item.ddlLabel}}" class="event-row">截止 {{item.ddlLabel}} · {{item.relLabel}}</view>
         <view class="tags">
-          <text wx:if="{{item.recurring}}" class="tag">每天</text>
-          <text wx:if="{{item.reminderLabel}}" class="tag tag-warn">提醒 {{item.reminderLabel}}</text>
+          <text wx:if="{{item.remindOnce}}" class="tag tag-warn">提醒一次</text>
+          <text wx:if="{{item.reminderLabel}}" class="tag">提醒 {{item.reminderLabel}}</text>
         </view>
         <view wx:if="{{item.overdue}}" class="event-row"><text class="tag tag-danger">已逾期</text></view>
+        <view class="event-ops">
+          <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="task">编辑</text>
+          <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
+        </view>
       </view>
+
+      <block wx:if="{{taskRecurring.length > 0}}">
+        <view class="section">周期任务 · {{taskRecurring.length}}</view>
+        <view wx:for="{{taskRecurring}}" wx:key="id" class="card event recurring" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
+          <view class="event-head">
+            <view class="event-name">{{item.name}}</view>
+            <text class="tag">每天</text>
+          </view>
+          <view wx:if="{{item.content}}" class="event-row muted">{{item.content}}</view>
+          <view wx:if="{{item.reminderTimeLabel}}" class="event-row">每天 {{item.reminderTimeLabel}} 提醒</view>
+          <view wx:else class="event-row">每天 09:00 提醒</view>
+          <view class="event-ops">
+            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="task">编辑</text>
+            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
+          </view>
+        </view>
+      </block>
 
       <block wx:if="{{taskDone.length > 0}}">
         <view class="section">已完成 · {{taskDone.length}}</view>
         <view wx:for="{{taskDone}}" wx:key="id" class="card event dim" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-          <view class="event-name">{{item.name}}</view>
+          <view class="event-head">
+            <view class="event-name">{{item.name}}</view>
+            <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+          </view>
           <view wx:if="{{item.ddlLabel}}" class="event-row muted">截止 {{item.ddlLabel}}</view>
           <view class="event-row">
             <text wx:if="{{item.recurring}}" class="tag">每天</text>
             <text class="tag tag-done">已完成</text>
+          </view>
+          <view class="event-ops">
+            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="task">编辑</text>
+            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
           </view>
         </view>
       </block>

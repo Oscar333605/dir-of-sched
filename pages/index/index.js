@@ -1,6 +1,6 @@
 const { cloud } = require('../../utils/cloud')
 const auth = require('../../utils/auth')
-const { formatDateTime, relativeUntil } = require('../../utils/format')
+const { formatDateTime, formatTimeOnly, relativeUntil } = require('../../utils/format')
 const { parseToDate } = require('../../utils/datetime')
 const { deleteEvent } = require('../../utils/event')
 
@@ -18,8 +18,9 @@ Page({
     upcoming: [],
     ongoing: [],
     past: [],
-    // 任务列表
+    // 任务列表（周期任务与短期任务分开展示）
     taskPending: [],
+    taskRecurring: [],
     taskDone: []
   },
 
@@ -66,13 +67,15 @@ Page({
     const upcoming = []   // 未开始
     const ongoing = []    // 已开始、未结束
     const past = []       // 历史（已结束 / 已完成）
-    const taskPending = [] // 任务未完成
+    const taskPending = [] // 任务未完成（短期/非周期）
+    const taskRecurring = [] // 周期任务（每天重复）
     const taskDone = []    // 任务已完成
     const rows = data || []
     rows.forEach(function (e) {
       // 任务类型单独归类
       if (e.event_type === 'task') {
         if (e.status === 'completed') taskDone.push(e)
+        else if (e.recurrence_rule === 'daily' || e.is_recurring === true) taskRecurring.push(e)
         else taskPending.push(e)
         return
       }
@@ -90,13 +93,18 @@ Page({
       }
     })
     function decorate(list) {
-      return list.map(function (e) {
+      // 置顶项排最前
+      const sorted = list.slice().sort(function (a, b) {
+        return (b.pinned === true ? 1 : 0) - (a.pinned === true ? 1 : 0)
+      })
+      return sorted.map(function (e) {
         const endMs = e.end_time ? toMs(e.end_time) : toMs(e.start_time)
         return {
           id: e.id,
           name: e.name,
           location: e.location || '',
           note: e.note || '',
+          pinned: e.pinned === true,
           startLabel: formatDateTime(e.start_time),
           endLabel: e.end_time ? formatDateTime(e.end_time) : '',
           relLabel: relativeUntil(e.start_time),
@@ -108,16 +116,22 @@ Page({
       })
     }
     function decorateTask(list) {
-      return list.map(function (e) {
+      const sorted = list.slice().sort(function (a, b) {
+        return (b.pinned === true ? 1 : 0) - (a.pinned === true ? 1 : 0)
+      })
+      return sorted.map(function (e) {
         return {
           id: e.id,
           name: e.name,
           content: e.task_content || '',
           note: e.note || '',
+          pinned: e.pinned === true,
           ddlLabel: formatDateTime(e.task_ddl),
           relLabel: relativeUntil(e.task_ddl),
-          recurring: e.is_recurring === true,
+          recurring: e.recurrence_rule === 'daily' || e.is_recurring === true,
+          remindOnce: e.recurrence_rule === 'once',
           reminderLabel: e.reminder_time ? formatDateTime(e.reminder_time) : '',
+          reminderTimeLabel: e.reminder_time ? formatTimeOnly(e.reminder_time) : '',
           completed: e.status === 'completed',
           overdue: e.status !== 'completed' && e.task_ddl && toMs(e.task_ddl) < Date.now()
         }
@@ -128,6 +142,7 @@ Page({
       ongoing: decorate(ongoing),
       past: decorate(past),
       taskPending: decorateTask(taskPending),
+      taskRecurring: decorateTask(taskRecurring),
       taskDone: decorateTask(taskDone),
       loading: false
     })
@@ -157,6 +172,29 @@ Page({
 
   goDetail(e) {
     wx.navigateTo({ url: '/pages/detail/detail?id=' + e.currentTarget.dataset.id })
+  },
+
+  // 切换置顶状态
+  async togglePin(e) {
+    const id = e.currentTarget.dataset.id
+    const pinned = e.currentTarget.dataset.pinned === true
+    if (!id) return
+    const { error } = await cloud.database
+      .from('events').update({ pinned: !pinned }).eq('id', id)
+    if (error) {
+      wx.showToast({ title: '操作失败', icon: 'none' })
+      return
+    }
+    wx.showToast({ title: pinned ? '已取消置顶' : '已置顶', icon: 'none' })
+    this.loadEvents()
+  },
+
+  // 进入编辑页
+  goEdit(e) {
+    const id = e.currentTarget.dataset.id
+    const type = e.currentTarget.dataset.type
+    const url = '/pages/add/add?type=' + type + '&id=' + id
+    wx.navigateTo({ url: url })
   },
 
   // 长按卡片删除日程

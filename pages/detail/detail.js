@@ -71,7 +71,8 @@ Page({
         eventType: event.event_type || 'activity',
         taskContent: event.task_content || '',
         taskDdlLabel: event.task_ddl ? formatDateTime(event.task_ddl) : '',
-        recurring: event.is_recurring === true,
+        recurring: event.recurrence_rule === 'daily' || event.is_recurring === true,
+        remindOnce: event.recurrence_rule === 'once',
         reminderLabel: event.reminder_time ? formatDateTime(event.reminder_time) : '',
         startLabel: formatDateTime(event.start_time),
         endLabel: event.end_time ? formatDateTime(event.end_time) : '',
@@ -85,6 +86,12 @@ Page({
       regConfirmed: event.registration_confirmed === true,
       completed: event.status === 'completed'
     })
+  },
+
+  // 进入编辑页
+  goEdit() {
+    const type = this.data.event && this.data.event.eventType === 'task' ? 'task' : 'activity'
+    wx.navigateTo({ url: '/pages/add/add?type=' + type + '&id=' + this.data.id })
   },
 
   // 手动标记完成（历史回溯用）

@@ -57,6 +57,39 @@
   margin-bottom: 8rpx;
 }
 
+.event-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pin-badge {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  background: #fff3e6;
+  color: #d97706;
+  margin-left: 12rpx;
+}
+
+.event-ops {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f2f5;
+  display: flex;
+  gap: 32rpx;
+}
+
+.op {
+  font-size: 24rpx;
+  color: #3b82f6;
+}
+
+.recurring {
+  border-left: 6rpx solid #3b82f6;
+}
+
 .event-row {
   font-size: 26rpx;
   color: #3f4552;

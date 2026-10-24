@@ -83,6 +83,28 @@
   align-items: center;
 }
 
+.mode-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.mode-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  background: #f0f3f8;
+  color: #6b7280;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+}
+
+.mode-active {
+  background: #eef4ff;
+  color: #3b82f6;
+  font-weight: 600;
+  border: 2rpx solid #3b82f6;
+}
+
 .save-btn {
   margin-top: 8rpx;
   margin-bottom: 40rpx;

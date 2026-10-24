@@ -6,6 +6,7 @@
       <view wx:if="{{event.taskContent}}" class="line">工作内容：{{event.taskContent}}</view>
       <view wx:if="{{event.taskDdlLabel}}" class="line">截止：{{event.taskDdlLabel}}</view>
       <view wx:if="{{event.recurring}}" class="line"><text class="tag">每天重复</text></view>
+      <view wx:if="{{event.remindOnce}}" class="line"><text class="tag tag-warn">提醒一次</text></view>
       <view wx:if="{{event.reminderLabel}}" class="line">提醒时间：{{event.reminderLabel}}</view>
       <view wx:if="{{event.note}}" class="line">备注：{{event.note}}</view>
     </block>
@@ -20,8 +21,9 @@
   </view>
 
   <view class="card">
-    <view class="btn-primary" wx:if="{{!completed}}" bindtap="markCompleted">标记为已完成</view>
-    <view class="btn-ghost" wx:else bindtap="unmarkCompleted">撤销完成</view>
+    <view class="btn-ghost" bindtap="goEdit">编辑</view>
+    <view class="btn-primary" wx:if="{{!completed}}" bindtap="markCompleted" style="margin-top:16rpx;">标记为已完成</view>
+    <view class="btn-ghost" wx:else bindtap="unmarkCompleted" style="margin-top:16rpx;">撤销完成</view>
   </view>
 
   <view wx:if="{{event.eventType !== 'task' && event.hasRegistration}}" class="card reg">

@@ -58,7 +58,8 @@ function computeReminders(event) {
 function computeTaskReminders(event) {
   const list = []
   const now = Date.now()
-  const isRecurring = event.is_recurring === true && event.recurrence_rule === 'daily'
+  // 提醒频率：daily=每天重复；once=只提醒一次；其余（none/空）=不按 reminder_time 提醒
+  const rule = event.recurrence_rule || (event.is_recurring === true ? 'daily' : 'none')
 
   // 1) 截止时间提醒（可选）：截止前 lead 小时
   if (event.task_ddl) {
@@ -70,10 +71,10 @@ function computeTaskReminders(event) {
     }
   }
 
-  // 2) 周期任务（每天重复）：生成「下一次」的每日提醒。
+  // 2) 每天重复：生成「下一次」的每日提醒。
   //    规则：取 reminder_time 的时分（未设则默认 09:00），计算今天该时刻，若已过则推到明天。
   //    每次触发后由调度器滚动续期（生成再下一天），形成每日循环。
-  if (isRecurring) {
+  if (rule === 'daily') {
     let h = 9
     let m = 0
     if (event.reminder_time) {
@@ -89,8 +90,8 @@ function computeTaskReminders(event) {
       next.setDate(next.getDate() + 1)
     }
     list.push({ type: 'task_daily', triggerAt: next.toISOString() })
-  } else if (event.reminder_time) {
-    // 3) 非周期任务的自定义提醒时间（可选）：在指定时刻发一封提醒邮件（一次性）
+  } else if (rule === 'once' && event.reminder_time) {
+    // 3) 只提醒一次：在 reminder_time 指定时刻发一封提醒邮件（一次性）
     const rt = new Date(event.reminder_time)
     if (!isNaN(rt.getTime())) {
       list.push({ type: 'task_reminder', triggerAt: rt.toISOString() })

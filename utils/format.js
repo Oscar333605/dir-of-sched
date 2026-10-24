@@ -18,6 +18,13 @@ function formatDate(iso) {
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 }
 
+// 只取时分 HH:mm（用于周期任务展示每天的提醒时刻）
+function formatTimeOnly(iso) {
+  const d = parseToDate(iso)
+  if (!d) return ''
+  return pad(d.getHours()) + ':' + pad(d.getMinutes())
+}
+
 // 距离某个时间还有多久（用于展示，如 '3 天后' / '2 小时后'）
 function relativeUntil(iso) {
   const d = parseToDate(iso)
@@ -47,4 +54,4 @@ function reminderTypeLabel(type) {
   return map[type] || type
 }
 
-module.exports = { formatDateTime, formatDate, relativeUntil, reminderTypeLabel }
+module.exports = { formatDateTime, formatDate, formatTimeOnly, relativeUntil, reminderTypeLabel }

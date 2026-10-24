@@ -123,22 +123,29 @@
         </view>
       </view>
 
-      <view class="field switch-field">
-        <view class="label">每天重复</view>
-        <switch checked="{{form.isRecurring}}" bindchange="onIsRecurring" color="#3b82f6" />
-      </view>
-
       <view class="field">
-        <view class="label">提醒时间（可选，每日定时提醒）</view>
-        <view class="row">
-          <picker class="picker" mode="date" value="{{form.reminderDate || today}}" data-field="reminderDate" bindchange="onField">
-            <view class="picker-val">{{form.reminderDate || '选择日期'}}</view>
-          </picker>
-          <picker class="picker" mode="time" value="{{form.reminderTime}}" data-field="reminderTime" bindchange="onField">
-            <view class="picker-val">{{form.reminderTime}}</view>
-          </picker>
+        <view class="label">提醒频率</view>
+        <view class="mode-row">
+          <view class="mode-item {{form.remindMode === 'none' ? 'mode-active' : ''}}" data-mode="none" bindtap="onRemindMode">不提醒</view>
+          <view class="mode-item {{form.remindMode === 'once' ? 'mode-active' : ''}}" data-mode="once" bindtap="onRemindMode">提醒一次</view>
+          <view class="mode-item {{form.remindMode === 'daily' ? 'mode-active' : ''}}" data-mode="daily" bindtap="onRemindMode">每天提醒</view>
         </view>
       </view>
+
+      <block wx:if="{{form.remindMode !== 'none'}}">
+        <view class="field">
+          <view class="label">{{form.remindMode === 'daily' ? '每天提醒时间' : '提醒时间'}}</view>
+          <view class="row">
+            <picker class="picker" mode="date" value="{{form.reminderDate || today}}" data-field="reminderDate" bindchange="onField">
+              <view class="picker-val">{{form.reminderDate || '选择日期'}}</view>
+            </picker>
+            <picker class="picker" mode="time" value="{{form.reminderTime}}" data-field="reminderTime" bindchange="onField">
+              <view class="picker-val">{{form.reminderTime}}</view>
+            </picker>
+          </view>
+          <view wx:if="{{form.remindMode === 'daily'}}" class="hint">每天重复时，以所选时间为准，日期部分会自动顺延到每天。</view>
+        </view>
+      </block>
     </view>
 
     <view class="btn-primary save-btn" bindtap="onSave">{{saving ? '保存中…' : '保存任务'}}</view>

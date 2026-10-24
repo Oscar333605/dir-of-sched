@@ -8,6 +8,7 @@ const { splitIso, buildIso, toDateStr } = require('../../utils/datetime')
 Page({
   data: {
     type: 'activity',   // activity | task
+    editId: null,       // 编辑模式：非空表示编辑已有事件
     today: '',          // 当天日期，供可选日期 picker 的 value 兜底（空值会弹不出面板）
     rawText: '',
     imageTempPath: '',
@@ -31,27 +32,79 @@ Page({
       taskContent: '',
       taskDdlDate: '',
       taskDdlTime: '18:00',
-      isRecurring: false,       // 是否每天重复
-      reminderDate: '',         // 提醒时间（日期部分，可选，空=不提醒）
+      // 提醒频率：none=不提醒 / once=提醒一次 / daily=每天提醒
+      remindMode: 'none',
+      reminderDate: '',         // 提醒时间（日期部分；once 用完整日期，daily 仅用时分）
       reminderTime: '09:00'     // 提醒时间（时分部分）
     }
   },
 
   onLoad(options) {
     const type = options && options.type === 'task' ? 'task' : 'activity'
+    const editId = options && options.id ? Number(String(options.id).replace(/\D/g, '')) : null
     const d = new Date()
     const patch = {
       type: type,
+      editId: editId || null,
       today: toDateStr(d),
       'form.startDate': toDateStr(d)
     }
     // 报名开始/截止日期、任务截止日期不设默认值：留空表示「未填写」，避免把默认日期误当成真实时间存库
     if (type === 'task') {
-      wx.setNavigationBarTitle({ title: '添加任务' })
+      wx.setNavigationBarTitle({ title: editId ? '编辑任务' : '添加任务' })
     } else {
-      wx.setNavigationBarTitle({ title: '添加活动' })
+      wx.setNavigationBarTitle({ title: editId ? '编辑活动' : '添加活动' })
     }
     this.setData(patch)
+    if (editId) {
+      this.loadForEdit(editId, type)
+    }
+  },
+
+  // 编辑模式：按 id 拉取已有事件，回填表单
+  async loadForEdit(id, type) {
+    const { data: event, error } = await cloud.database
+      .from('events').select('*').eq('id', id).single()
+    if (error || !event) {
+      wx.showToast({ title: '加载失败', icon: 'none' })
+      return
+    }
+    if (type === 'task') {
+      const ddl = splitIso(event.task_ddl)
+      const rt = splitIso(event.reminder_time)
+      const rule = event.recurrence_rule || 'none'
+      this.setData({
+        parsed: true,
+        'form.name': event.name || '',
+        'form.taskContent': event.task_content || '',
+        'form.note': event.note || '',
+        'form.taskDdlDate': event.task_ddl ? ddl.date : '',
+        'form.taskDdlTime': event.task_ddl ? ddl.time : '18:00',
+        'form.remindMode': rule,
+        'form.reminderDate': event.reminder_time ? rt.date : '',
+        'form.reminderTime': event.reminder_time ? rt.time : '09:00'
+      })
+    } else {
+      const start = splitIso(event.start_time)
+      const end = splitIso(event.end_time)
+      const ddl = splitIso(event.registration_deadline)
+      const regStart = splitIso(event.registration_start_time)
+      this.setData({
+        parsed: true,
+        'form.name': event.name || '',
+        'form.location': event.location || '',
+        'form.note': event.note || '',
+        'form.startDate': start.date,
+        'form.startTime': start.time,
+        'form.endDate': event.end_time ? end.date : '',
+        'form.endTime': event.end_time ? end.time : '18:00',
+        'form.hasRegistration': event.has_registration === true,
+        'form.ddlDate': event.registration_deadline ? ddl.date : '',
+        'form.ddlTime': event.registration_deadline ? ddl.time : '18:00',
+        'form.regStartDate': event.registration_start_time ? regStart.date : '',
+        'form.regStartTime': event.registration_start_time ? regStart.time : '09:00'
+      })
+    }
   },
 
   onInput(e) {
@@ -175,7 +228,8 @@ Page({
         'form.taskContent': r.task_content || '',
         'form.note': r.note || '',
         'form.taskDdlDate': r.task_ddl ? ddl.date : '',
-        'form.taskDdlTime': r.task_ddl ? ddl.time : this.data.form.taskDdlTime
+        'form.taskDdlTime': r.task_ddl ? ddl.time : this.data.form.taskDdlTime,
+        'form.remindMode': 'none'
       })
       return
     }
@@ -211,8 +265,10 @@ Page({
     this.setData({ 'form.hasRegistration': e.detail.value })
   },
 
-  onIsRecurring(e) {
-    this.setData({ 'form.isRecurring': e.detail.value })
+  // 提醒频率选择：none=不提醒 / once=提醒一次 / daily=每天提醒
+  onRemindMode(e) {
+    const mode = e.currentTarget.dataset.mode
+    this.setData({ 'form.remindMode': mode })
   },
 
   async onSave() {
@@ -255,23 +311,27 @@ Page({
         image_path: this.data.imageTempPath ? '' : ''
       }
 
-      const ins = await cloud.database.from('events').insert(event).select()
-      if (ins.error) throw ins.error
-      const created = ins.data && ins.data[0]
-      if (!created) throw new Error('保存失败')
-
-      const reminders = computeReminders(created)
-      if (reminders.length > 0) {
-        const rows = reminders.map(function (r) {
-          return { event_id: created.id, type: r.type, trigger_at: r.triggerAt }
-        })
-        await cloud.database.from('reminders').insert(rows)
+      let targetId
+      if (this.data.editId) {
+        // 编辑：更新已有事件
+        const upd = await cloud.database.from('events').update(event).eq('id', this.data.editId).select()
+        if (upd.error) throw upd.error
+        targetId = this.data.editId
+      } else {
+        const ins = await cloud.database.from('events').insert(event).select()
+        if (ins.error) throw ins.error
+        const created = ins.data && ins.data[0]
+        if (!created) throw new Error('保存失败')
+        targetId = created.id
+        // 仅新增时请求订阅授权（编辑不重复请求）
+        this.requestSubscribe(event)
+        this.collectOpenid(session.user.id)
       }
 
-      this.requestSubscribe(created)
-      this.collectOpenid(session.user.id)
+      // 重算提醒：先删旧提醒再按新字段重建（编辑场景保持一致）
+      await this.rebuildReminders(targetId, event)
 
-      wx.showToast({ title: '已排入日程', icon: 'success' })
+      wx.showToast({ title: this.data.editId ? '已更新' : '已排入日程', icon: 'success' })
       setTimeout(function () { wx.navigateBack() }, 800)
     } catch (e) {
       wx.showToast({ title: (e && e.message) || '保存失败', icon: 'none' })
@@ -293,11 +353,12 @@ Page({
       if (!session) throw new Error('请先登录')
 
       const taskDdlIso = f.taskDdlDate ? buildIso(f.taskDdlDate, f.taskDdlTime) : null
-      const isRecurring = f.isRecurring === true
-      // 提醒时间：仅当用户选择了「提醒日期」时才算填写（否则留空=不提醒）
-      const reminderIso = f.reminderDate ? buildIso(f.reminderDate, f.reminderTime) : null
-      // 周期任务：重复规则固定为 daily（每天重复）
-      const recurrenceRule = isRecurring ? 'daily' : null
+      // 提醒频率：none=不提醒 / once=提醒一次 / daily=每天提醒
+      const remindMode = f.remindMode || 'none'
+      // 提醒时间：仅当 remindMode 为 once/daily 且选了日期时才写入
+      const reminderIso = (remindMode !== 'none' && f.reminderDate) ? buildIso(f.reminderDate, f.reminderTime) : null
+      const isRecurring = remindMode === 'daily'
+      const recurrenceRule = remindMode === 'none' ? null : remindMode
 
       // start_time 表约束 NOT NULL：任务无独立开始时间，
       // 有截止时间用截止时间，否则用提醒时间/当前时间兜底，仅满足约束、不影响展示（任务展示用 task_ddl）
@@ -317,27 +378,44 @@ Page({
         raw_text: this.data.rawText || ''
       }
 
-      const ins = await cloud.database.from('events').insert(event).select()
-      if (ins.error) throw ins.error
-      const created = ins.data && ins.data[0]
-      if (!created) throw new Error('保存失败')
-
-      const reminders = computeReminders(created)
-      if (reminders.length > 0) {
-        const rows = reminders.map(function (r) {
-          return { event_id: created.id, type: r.type, trigger_at: r.triggerAt }
-        })
-        await cloud.database.from('reminders').insert(rows)
+      let targetId
+      if (this.data.editId) {
+        const upd = await cloud.database.from('events').update(event).eq('id', this.data.editId).select()
+        if (upd.error) throw upd.error
+        targetId = this.data.editId
+      } else {
+        const ins = await cloud.database.from('events').insert(event).select()
+        if (ins.error) throw ins.error
+        const created = ins.data && ins.data[0]
+        if (!created) throw new Error('保存失败')
+        targetId = created.id
+        // 仅新增时请求订阅授权（编辑不重复请求）
+        this.requestSubscribe(event)
+        this.collectOpenid(session.user.id)
       }
 
-      this.requestSubscribe(created)
-      this.collectOpenid(session.user.id)
+      // 重算提醒：先删旧提醒再按新字段重建
+      const updatedEvent = Object.assign({ id: targetId }, event)
+      await this.rebuildReminders(targetId, updatedEvent)
 
-      wx.showToast({ title: '已添加任务', icon: 'success' })
+      wx.showToast({ title: this.data.editId ? '已更新' : '已添加任务', icon: 'success' })
       setTimeout(function () { wx.navigateBack() }, 800)
     } catch (e) {
       wx.showToast({ title: (e && e.message) || '保存失败', icon: 'none' })
       this.setData({ saving: false })
+    }
+  },
+
+  // 重建某事件的提醒：先删除旧提醒，再按最新字段重新计算并插入。
+  // 用于新增后的首次建提醒，也用于编辑后同步更新提醒计划。
+  async rebuildReminders(eventId, event) {
+    await cloud.database.from('reminders').delete().eq('event_id', eventId)
+    const reminders = computeReminders(event)
+    if (reminders.length > 0) {
+      const rows = reminders.map(function (r) {
+        return { event_id: eventId, type: r.type, trigger_at: r.triggerAt }
+      })
+      await cloud.database.from('reminders').insert(rows)
     }
   },
 
