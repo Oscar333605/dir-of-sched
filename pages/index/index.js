@@ -14,7 +14,7 @@ Page({
   data: {
     loggedIn: false,
     loading: true,
-    tab: 'activity',   // activity | task
+    tab: 'activity',   // activity | task | recurring
     upcoming: [],
     ongoing: [],
     past: [],
@@ -162,8 +162,8 @@ Page({
       this.doLogin()
       return
     }
-    // 根据当前 Tab 进入对应新增页
-    if (this.data.tab === 'task') {
+    // 根据当前 Tab 进入对应新增页（周期任务与任务同属任务类型）
+    if (this.data.tab === 'task' || this.data.tab === 'recurring') {
       wx.navigateTo({ url: '/pages/add/add?type=task' })
     } else {
       wx.navigateTo({ url: '/pages/add/add?type=activity' })

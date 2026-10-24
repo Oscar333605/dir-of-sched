@@ -16,6 +16,7 @@
     <view class="tabs">
       <view class="tab {{tab === 'activity' ? 'tab-active' : ''}}" data-tab="activity" bindtap="switchTab">活动</view>
       <view class="tab {{tab === 'task' ? 'tab-active' : ''}}" data-tab="task" bindtap="switchTab">任务</view>
+      <view class="tab {{tab === 'recurring' ? 'tab-active' : ''}}" data-tab="recurring" bindtap="switchTab">周期任务</view>
     </view>
 
     <!-- 活动视图 -->
@@ -102,23 +103,6 @@
         </view>
       </view>
 
-      <block wx:if="{{taskRecurring.length > 0}}">
-        <view class="section">周期任务 · {{taskRecurring.length}}</view>
-        <view wx:for="{{taskRecurring}}" wx:key="id" class="card event recurring" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
-          <view class="event-head">
-            <view class="event-name">{{item.name}}</view>
-            <text class="tag">每天</text>
-          </view>
-          <view wx:if="{{item.content}}" class="event-row muted">{{item.content}}</view>
-          <view wx:if="{{item.reminderTimeLabel}}" class="event-row">每天 {{item.reminderTimeLabel}} 提醒</view>
-          <view wx:else class="event-row">每天 09:00 提醒</view>
-          <view class="event-ops">
-            <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="task">编辑</text>
-            <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
-          </view>
-        </view>
-      </block>
-
       <block wx:if="{{taskDone.length > 0}}">
         <view class="section">已完成 · {{taskDone.length}}</view>
         <view wx:for="{{taskDone}}" wx:key="id" class="card event dim" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
@@ -137,6 +121,30 @@
           </view>
         </view>
       </block>
+    </block>
+
+    <!-- 周期任务视图 -->
+    <block wx:if="{{tab === 'recurring'}}">
+      <view class="section">周期任务 · {{taskRecurring.length}}<text class="hint-tip">（点卡片看详情，长按删除）</text></view>
+      <view wx:if="{{taskRecurring.length === 0}}" class="card empty">
+        <view class="empty-desc">暂无周期任务，点右下角「+」添加</view>
+      </view>
+      <view wx:for="{{taskRecurring}}" wx:key="id" class="card event recurring" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="goDetail" bindlongpress="onLongPressDelete">
+        <view class="event-head">
+          <view class="event-name">{{item.name}}</view>
+          <view>
+            <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+            <text class="tag">每天</text>
+          </view>
+        </view>
+        <view wx:if="{{item.content}}" class="event-row muted">{{item.content}}</view>
+        <view wx:if="{{item.reminderTimeLabel}}" class="event-row">每天 {{item.reminderTimeLabel}} 提醒</view>
+        <view wx:else class="event-row">每天 09:00 提醒</view>
+        <view class="event-ops">
+          <text class="op" catchtap="goEdit" data-id="{{item.id}}" data-type="task">编辑</text>
+          <text class="op" catchtap="togglePin" data-id="{{item.id}}" data-pinned="{{item.pinned}}">{{item.pinned ? '取消置顶' : '置顶'}}</text>
+        </view>
+      </view>
     </block>
   </block>
 
