@@ -51,10 +51,13 @@ Page({
     rows.forEach(function (e) {
       const isRecurring = e.recurrence_rule === 'daily' || e.is_recurring === true
       if (e.event_type === 'task') {
-        // 只收集已完成/已终结的任务
-        if (e.status !== 'completed') return
-        if (isRecurring) histRecurring.push(e)
-        else histTask.push(e)
+        // 周期任务：仅「已终结」才归档历史；「当天完成」（未终结）不进历史
+        if (isRecurring) {
+          if (e.terminated === true || e.status === 'completed') histRecurring.push(e)
+          return
+        }
+        // 非周期任务：完成即归档
+        if (e.status === 'completed') histTask.push(e)
         return
       }
       // 活动：已结束（含已完成）

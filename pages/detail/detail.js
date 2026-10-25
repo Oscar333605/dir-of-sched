@@ -14,7 +14,9 @@ Page({
     regStartLabel: '',
         regConfirmed: false,
     completed: false,
-    terminated: false
+    terminated: false,
+    completedDate: '',   // 周期任务的「当天完成」标记（YYYY-MM-DD），用于展示与撤销
+    todayStr: ''         // 今天的日期串（供 WXML 比较）
   },
 
   onLoad(options) {
@@ -86,7 +88,9 @@ Page({
       ddlPassed: ddlPassed,
       regConfirmed: event.registration_confirmed === true,
       completed: event.status === 'completed',
-      terminated: event.terminated === true
+      terminated: event.terminated === true,
+      completedDate: event.completed_date || '',
+      todayStr: this.todayStr()
     })
   },
 
@@ -102,25 +106,41 @@ Page({
     return !!(e && (e.recurring === true))
   },
 
+  // 今天的本地日期字符串 YYYY-MM-DD（用于周期任务「当天完成」标记）
+  todayStr() {
+    const d = new Date()
+    const p = function (n) { return n < 10 ? '0' + n : '' + n }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+  },
+
   // 停止某事件的后续提醒：删除其所有未发送（pending）的提醒，使其不再触发、也不再被调度器续期。
   async stopPendingReminders() {
     await cloud.database.from('reminders').delete().eq('event_id', this.data.id)
   },
 
-  // 手动标记完成（历史回溯用）
+  // 手动标记完成。
+  // 语义区分：
+  //   - 周期任务（recurrence_rule='daily'）：仅标记「当天完成」，写入 completed_date（当天日期），
+  //     保持 status='active'、不清除每日提醒；第二天该任务仍会出现在周期任务列表中，完成标记自动失效。
+  //   - 非周期任务/活动：维持原逻辑，status='completed' 并停止提醒，归入历史。
   async markCompleted() {
     if (this.data.completed) return
     const that = this
     try {
-      // 周期任务完成时，同时停止后续每日提醒
       if (this.isRecurring()) {
-        await this.stopPendingReminders()
+        // 周期任务：只记「当天完成」，不终结、不清提醒
+        await cloud.database.from('events')
+          .update({ completed_date: this.todayStr() })
+          .eq('id', this.data.id)
+        that.setData({ completedDate: this.todayStr() })
+        wx.showToast({ title: '已标记今天完成', icon: 'success' })
+      } else {
+        await cloud.database.from('events')
+          .update({ status: 'completed', completed_at: new Date().toISOString() })
+          .eq('id', this.data.id)
+        that.setData({ completed: true })
+        wx.showToast({ title: '已标记完成', icon: 'success' })
       }
-      await cloud.database.from('events')
-        .update({ status: 'completed', completed_at: new Date().toISOString() })
-        .eq('id', this.data.id)
-      that.setData({ completed: true })
-      wx.showToast({ title: '已标记完成', icon: 'success' })
     } catch (e) {
       wx.showToast({ title: '操作失败', icon: 'none' })
     }
@@ -155,16 +175,37 @@ Page({
     }
   },
 
-  // 撤销完成，恢复为进行中/待办
+  // 撤销完成。
+  // 语义区分：
+  //   - 周期任务且「仅当天完成」（未终结）：清空 completed_date，任务保持 active、提醒不变。
+  //   - 周期任务且「已终结」或非周期任务：恢复为 active，并重建后续提醒（终结/完成曾停过提醒）。
   unmarkCompleted() {
     const that = this
+    const isRecurring = this.isRecurring()
+    const isTerminated = this.data.terminated === true
+    // 只有「当天完成（未终结）」的周期任务走「轻量撤销」
+    const lightUndo = isRecurring && !isTerminated && !this.data.completed
     wx.showModal({
       title: '撤销完成',
-      content: '将该日程恢复为未完成状态？',
+      content: lightUndo ? '撤销「今天完成」标记？' : '将该日程恢复为未完成状态？',
       success(res) {
         if (!res.confirm) return
+        if (lightUndo) {
+          // 周期任务：仅清空当天完成标记
+          cloud.database.from('events')
+            .update({ completed_date: null })
+            .eq('id', that.data.id)
+            .then(function () {
+              that.setData({ completedDate: '' })
+              wx.showToast({ title: '已撤销', icon: 'success' })
+            })
+            .catch(function () {
+              wx.showToast({ title: '操作失败', icon: 'none' })
+            })
+          return
+        }
         cloud.database.from('events')
-          .update({ status: 'active', completed_at: null, terminated: false })
+          .update({ status: 'active', completed_at: null, terminated: false, completed_date: null })
           .eq('id', that.data.id)
           .then(async function () {
             // 周期任务恢复后，重建后续每日提醒
@@ -182,7 +223,7 @@ Page({
                 }
               }
             }
-            that.setData({ completed: false, terminated: false })
+            that.setData({ completed: false, terminated: false, completedDate: '' })
             wx.showToast({ title: '已恢复', icon: 'success' })
           })
           .catch(function () {

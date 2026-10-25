@@ -99,6 +99,7 @@
           <view class="event-name">{{item.name}}</view>
           <view>
             <text wx:if="{{item.pinned}}" class="pin-badge">置顶</text>
+            <text wx:if="{{item.completedToday}}" class="tag tag-done">今天已完成</text>
             <text class="tag">每天</text>
           </view>
         </view>

@@ -74,8 +74,15 @@ Page({
     rows.forEach(function (e) {
       // 任务类型单独归类
       if (e.event_type === 'task') {
+        const isRecurring = e.recurrence_rule === 'daily' || e.is_recurring === true
+        // 周期任务：仅「终结/完成」才移出周期列表；「当天完成」仍保留在周期列表中（第二天自动复位）
+        if (isRecurring) {
+          if (e.status === 'completed' || e.terminated === true) taskDone.push(e)
+          else taskRecurring.push(e)
+          return
+        }
+        // 非周期任务：完成即进已完成
         if (e.status === 'completed') taskDone.push(e)
-        else if (e.recurrence_rule === 'daily' || e.is_recurring === true) taskRecurring.push(e)
         else taskPending.push(e)
         return
       }
@@ -119,7 +126,12 @@ Page({
       const sorted = list.slice().sort(function (a, b) {
         return (b.pinned === true ? 1 : 0) - (a.pinned === true ? 1 : 0)
       })
+      // 今天的本地日期串，用于判断周期任务是否「今天已完成」
+      const d = new Date()
+      const p = function (n) { return n < 10 ? '0' + n : '' + n }
+      const todayStr = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
       return sorted.map(function (e) {
+        const isRecurring = e.recurrence_rule === 'daily' || e.is_recurring === true
         return {
           id: e.id,
           name: e.name,
@@ -128,11 +140,13 @@ Page({
           pinned: e.pinned === true,
           ddlLabel: formatDateTime(e.task_ddl),
           relLabel: relativeUntil(e.task_ddl),
-          recurring: e.recurrence_rule === 'daily' || e.is_recurring === true,
+          recurring: isRecurring,
           remindOnce: e.recurrence_rule === 'once',
           reminderLabel: e.reminder_time ? formatDateTime(e.reminder_time) : '',
           reminderTimeLabel: e.reminder_time ? formatTimeOnly(e.reminder_time) : '',
           completed: e.status === 'completed',
+          terminated: e.terminated === true,
+          completedToday: isRecurring && !!(e.completed_date && e.completed_date === todayStr),
           overdue: e.status !== 'completed' && e.task_ddl && toMs(e.task_ddl) < Date.now()
         }
       })
