@@ -12,6 +12,7 @@ const { dispatchOne } = require('./lib/dispatch')
 const wechat = require('./channels/wechat')
 const monitor = require('./lib/monitor')
 const config = require('./config')
+const { runCloudSweep } = require('./cloud-sweep')
 
 const PORT = process.env.PORT || 8787
 const HOST = process.env.HOST || '0.0.0.0'
@@ -141,6 +142,17 @@ const server = http.createServer(async function (req, res) {
     }
   }
 
+  // 云端自动调度：直连 Supabase 查库 + 发信（供手动触发 / 外部定时器调用）
+  if (method === 'POST' && url === '/run') {
+    try {
+      const out = await runCloudSweep()
+      return sendJson(res, out.ok ? 200 : 500, out)
+    } catch (e) {
+      monitor.log('error', { kind: 'run_error', message: e && e.message })
+      return sendJson(res, 500, { ok: false, error: e.message })
+    }
+  }
+
   // 收集 openid
   if (method === 'POST' && url === '/api/wx/openid') {
     try {
@@ -191,4 +203,29 @@ server.listen(PORT, HOST, function () {
     ', email=' + (config.email && config.email.enabled ? 'on' : 'off') +
     ', wechat=' + (config.wechat && config.wechat.appid ? 'on' : 'off') +
     ', auth=' + (AUTH_TOKEN ? 'on' : 'off'))
+
+  // ---- 内置定时器（方案 B）：每 5 分钟自动直连 Supabase 查库 + 发信 ----
+  // 配置了 SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY 才启用；否则退化为纯被动发信服务。
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const SWEEP_INTERVAL_MS = parseInt(process.env.SWEEP_INTERVAL_MS || '300000', 10) // 默认 5 分钟
+    console.log('[reminder-engine] cloud sweep enabled, interval=' + SWEEP_INTERVAL_MS + 'ms')
+    let running = false
+    async function tick() {
+      if (running) return
+      running = true
+      try {
+        const res = await runCloudSweep()
+        console.log('[cloud-sweep]', JSON.stringify({ ok: res.ok, processed: res.processed, error: res.error }))
+      } catch (e) {
+        monitor.log('error', { kind: 'cloud_sweep_tick', message: e && e.message })
+      } finally {
+        running = false
+      }
+    }
+    // 启动后立即跑一次，之后按间隔循环
+    tick()
+    setInterval(tick, SWEEP_INTERVAL_MS)
+  } else {
+    console.log('[reminder-engine] cloud sweep disabled (未配置 SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)')
+  }
 })
