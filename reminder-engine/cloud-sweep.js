@@ -20,13 +20,14 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 function pad(n) { return n < 10 ? '0' + n : '' + n }
 
 async function supabaseFetch(path, options) {
-  const res = await fetch(SUPABASE_URL + path, Object.assign({
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: 'Bearer ' + SERVICE_KEY,
-      'Content-Type': 'application/json'
-    }
-  }, options || {}))
+  options = options || {}
+  // 合并 headers：默认认证头 + options.headers，避免 options.headers 覆盖掉 apikey/Authorization
+  const headers = Object.assign({
+    apikey: SERVICE_KEY,
+    Authorization: 'Bearer ' + SERVICE_KEY,
+    'Content-Type': 'application/json'
+  }, options.headers || {})
+  const res = await fetch(SUPABASE_URL + path, Object.assign({}, options, { headers: headers }))
   if (!res.ok) {
     const text = await res.text().catch(function () { return '' })
     throw new Error('Supabase API ' + res.status + ': ' + text.slice(0, 300))
