@@ -3,6 +3,7 @@ name: sweep-reminders
 on:
   schedule:
     # 每 5 分钟跑一次（UTC 时间，GitHub 免费版 cron 可能有几分钟延迟，可接受）
+    # 注意：scheduled workflow 需在默认分支 master 上；连续失败会被 GitHub 暂停调度
     - cron: '*/5 * * * *'
   workflow_dispatch: {}   # 允许手动触发
 
