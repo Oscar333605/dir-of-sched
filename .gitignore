@@ -13,3 +13,11 @@ reminder-engine/.env
 
 # 微信开发者工具本地配置
 project.private.config.json
+
+# WorkBuddy 本地记忆/自动化数据（含个人信息，勿入库）
+.workbuddy/
+
+# 一次性数据迁移产物（含真实用户数据，勿入库）
+reminder-engine/migration-data.json
+reminder-engine/migrate-data.js
+docs/migrate-owner-id-and-data.sql
